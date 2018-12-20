@@ -26,13 +26,42 @@ SELECT TOP {count}
 	tl.TotalNumberOfCommands ,
 	tl.TotalNumberOfErrors ,
 	tl.TotalNumberOfDuplicates, 
+	tf.FileID AS FileId,
+	ISNULL(tf.RealFileName, t.TodoName) AS 'FileName',
+	ISNULL(tld.NumberOfEvents, 0) AS 'TotalNumberOfEvents'
+ FROM dbo.tTodoLog tl 
+ INNER JOIN dbo.tTodo AS t ON tl.TodoID = t.TodoID 
+ LEFT JOIN dbo.tTodoFile AS tf ON t.TodoID = tf.TodoID 
+ INNER JOIN dbo.tPartner AS p ON p.PartnerID = tf.PartnerID
+ LEFT JOIN (SELECT TodoLogID, SUM(NumberOfRows) AS 'NumberOfEvents' 
+				FROM dbo.tTodoLogDetail
+				GROUP BY TodoLogID) tld ON tl.TodoLogID = tld.TodoLogID
+ORDER BY tl.TodoLogID DESC;
+";
+        private const string _todoByTodoId = @"
+SELECT
+	t.TodoID,
+	t.TodoName ,
+	tf.PartnerID, 
+	p.PartnerName, 
+	t.StartDate ,
+	t.EndDate ,
+	t.CreatedBy ,
+	t.CreatedDate ,
+	tl.TodoLogID ,
+	tl.MessageID ,
+	tl.TotalNumberOfRows ,
+	tl.TotalNumberOfCommands ,
+	tl.TotalNumberOfErrors ,
+	tl.TotalNumberOfDuplicates, 
 	ISNULL(tf.RealFileName, t.TodoName) AS 'FileName' 
  FROM dbo.tTodoLog tl 
  INNER JOIN dbo.tTodo AS t ON tl.TodoID = t.TodoID 
  LEFT JOIN dbo.tTodoFile AS tf ON t.TodoID = tf.TodoID 
  INNER JOIN dbo.tPartner AS p ON p.PartnerID = tf.PartnerID
-ORDER BY tl.TodoLogID DESC;
-";
+ WHERE t.TodoId = @todoId
+ORDER BY tl.TodoLogID DESC;";
+
         private const string _todoLogSql = @"
 select tld.* 
 from dbo.tTodoLog tl
@@ -66,13 +95,42 @@ order by tld.EventTypeID";
             }
         }
 
+        [HttpGet("{environment}/{todoId}")]
+        public ActionResult<TodoLogsResult> GetTodosByTodoId(string environment, int todoId) {
+            var env = _config.Environments.FirstOrDefault(x => x.Name == environment);
+            if (env == null)
+                return NotFound(new ProblemDetails {
+                    Title = "Environment not found",
+                    Detail = $"Missing environment: {environment}"
+                });
+
+            try {
+                using (var conn = new SqlConnection(env.ConnectionString)) {
+                    var result = conn.Query<TodoLog>(_todoByTodoId, new {todoId});
+                    return Ok(new TodoLogsResult { Items = result.Select(TransformTodoLog).ToArray() });
+                }
+            }
+            catch (Exception e) {
+                return StatusCode(500, new ProblemDetails {
+                    Title = "InternalServerError",
+                    Detail = e.Message
+                });
+            }
+        }
+
+        private string CreateId(TodoLog log) {
+            var date = new DateTime(log.StartDate.Year, log.StartDate.Month, log.StartDate.Day, log.StartDate.Hour, log.StartDate.Minute - (log.StartDate.Minute % 10), 0);
+            return $"{log.TodoID}_{log.PartnerID}_{log.FileId}";
+        }
+
         private TodoLogResult TransformTodoLog(TodoLog todoLog) {
             return new TodoLogResult {
+                Id = CreateId(todoLog),
                 TodoID = todoLog.TodoID,
                 TodoName = todoLog.TodoName,
                 PartnerID = todoLog.PartnerID,
                 PartnerName = todoLog.PartnerName,
-                Duration = todoLog.EndDate.Subtract(todoLog.StartDate).Duration(),
+                Duration = todoLog.EndDate.Subtract(todoLog.StartDate).Duration().TotalMilliseconds,
                 StartDate = todoLog.StartDate,
                 EndDate = todoLog.EndDate,
                 CreatedBy = todoLog.CreatedBy,
@@ -84,10 +142,11 @@ order by tld.EventTypeID";
                 NumberOfErrors = todoLog.TotalNumberOfErrors,
                 NumberOfDuplicates = todoLog.TotalNumberOfDuplicates,
                 FileName = todoLog.FileName,
+                TotalNumberOfEvents = todoLog.TotalNumberOfEvents,
             };
         }
 
-        [HttpGet("{environment}/{todoId}")]
+        [HttpGet("detail/{environment}/{todoId}")]
         public ActionResult<TodoDetailsResult> GetDetail(string environment, int todoId) {
             var env = _config.Environments.FirstOrDefault(x => x.Name == environment);
             if (env == null)
@@ -138,7 +197,7 @@ order by tld.EventTypeID";
         public string TodoName { get; set; }
         public int PartnerID { get; set; }
         public string PartnerName { get; set; }
-        public TimeSpan Duration { get; set; }
+        public double Duration { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public string CreatedBy { get; set; }
@@ -150,6 +209,8 @@ order by tld.EventTypeID";
         public int NumberOfErrors { get; set; }
         public int NumberOfDuplicates { get; set; }
         public string FileName { get; set; }
+        public string Id { get; set; }
+        public int TotalNumberOfEvents { get; set; }
     }
 
     public class TodoLogsResult {
@@ -172,6 +233,8 @@ order by tld.EventTypeID";
         public int TotalNumberOfErrors { get; set; }
         public int TotalNumberOfDuplicates { get; set; }
         public string FileName { get; set; }
+        public int FileId { get; set; }
+        public int TotalNumberOfEvents { get; set; }
     }
     public class TodoLogDetail {
         public int TodoLogDetailID { get; set; }

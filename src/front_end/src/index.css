@@ -10,3 +10,15 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
+
+dt, dd {
+  display: inline-block;
+}
+
+dt {
+  width: 50%;
+}
+
+dd {
+  min-width: 5%;
+}

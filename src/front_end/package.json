@@ -8,15 +8,17 @@
     "axios": "^0.18.0",
     "http-proxy-middleware": "^0.19.1",
     "humanize-duration": "^3.16.0",
+    "lodash": "^4.17.11",
     "luxon": "^1.8.2",
     "react": "^16.7.0-alpha.2",
     "react-app-polyfill": "^0.1.3",
+    "react-csv": "^1.0.19",
     "react-dom": "^16.7.0-alpha.2",
+    "react-powerhooks": "0.0.7",
     "react-router-dom": "^4.3.1",
     "react-scripts": "2.1.1",
     "titleize": "^1.0.1",
-    "typeface-roboto": "0.0.54",
-    "react-csv": "^1.0.19"
+    "typeface-roboto": "0.0.54"
   },
   "scripts": {
     "start": "react-scripts start",
