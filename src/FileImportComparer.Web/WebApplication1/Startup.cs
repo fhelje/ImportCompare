@@ -16,6 +16,11 @@ namespace WebApplication1 {
         public void ConfigureServices(IServiceCollection services) {
             var environmentConfig = new EnvironmentsConfiguration();
             Configuration.GetSection("EnvironmentsConfig").Bind(environmentConfig);
+            
+            services.AddSpaStaticFiles(configuration => {
+                configuration.RootPath = "wwwroot";
+            });
+            services.AddMemoryCache();
             services.AddSingleton(environmentConfig);
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
@@ -25,8 +30,12 @@ namespace WebApplication1 {
             if (env.IsDevelopment()) {
                 app.UseDeveloperExceptionPage();
             }
-
+            app.UseStaticFiles();
+            app.UseSpaStaticFiles();
             app.UseMvc();
+            app.UseSpa(spa => {
+                spa.Options.SourcePath = "wwwroot";
+            });
         }
     }
 
