@@ -36,6 +36,7 @@ class App extends Component {
           <Grid item xs={12}>
             <div className="main-page">
               <Route exact path="/" component={HomePage} />
+              <Route exact path="/index.html" component={HomePage} />
               <Route exact path="/log-detail/:id1/:id2" component={LogDetail} />
             </div>
           </Grid>

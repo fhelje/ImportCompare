@@ -77,7 +77,7 @@ const SingleCell = ({ value }) => {
 };
 
 const toTime = val => DateTime.fromISO(val).toFormat("HH:mm:ss");
-const toDate = val => DateTime.fromISO(val).toLocaleString();
+const toDate = val => DateTime.fromISO(val).toFormat("yyyy-MM-dd");
 const toDuration1 = val => Duration.fromMillis(val);
 
 const logMissing = (row1, row2) => {
@@ -99,7 +99,6 @@ const Logs = ({ classes, rows }) => {
             <CustomTableCell>Partner</CustomTableCell>
             <CustomTableCell>TodoID</CustomTableCell>
             <CustomTableCell>File Name</CustomTableCell>
-            {/* <CustomTableCell>Message ID</CustomTableCell> */}
             <CustomTableCell>Rows</CustomTableCell>
             <CustomTableCell>Commands</CustomTableCell>
             <CustomTableCell>Errors</CustomTableCell>
@@ -138,7 +137,6 @@ const Logs = ({ classes, rows }) => {
                 <CustomTableCell>
                   <SingleCell value={row1.fileName} />
                 </CustomTableCell>
-                {/* <CustomTableCell>{row.messageID}</CustomTableCell> */}
                 <CustomTableCell>
                   <DubbleCell value1={row1.numberOfRows} value2={row2.numberOfRows} showDiff={true} />
                 </CustomTableCell>
